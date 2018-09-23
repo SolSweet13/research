@@ -11,6 +11,7 @@ using int32 = int32;
 
 void PrintIntro();
 void PlayGame();
+void AskForHiddenWordLength();
 FText GetValidGuess();
 bool AskToPlayAgain();
 void PrintGameSummary();
@@ -24,6 +25,8 @@ int main()
 	
 	do 
 	{
+		BCGame.Reset();
+
 		PrintIntro(); //Announces the game
 		PlayGame();
 	} while ( AskToPlayAgain() );
@@ -35,7 +38,11 @@ int main()
 void PrintIntro()
 {
 
-	std::cout << "\n\nWelcome to Bulls and Cows, a fun word game.\n";
+	std::cout << "\nWELCOME TO BULLS AND COWS, A FUN WORD GAME.\n";
+	std::cout << "The size of the word affects the number of tries...\n";
+
+	AskForHiddenWordLength();
+
 	std::cout << "Can you guess the " << BCGame.GetHiddenWordLength();
 	std::cout << " letter isogram I'm thinking of?\n";
 	std::cout << std::endl;
@@ -44,11 +51,11 @@ void PrintIntro()
 
 void PlayGame()
 {
-	BCGame.Reset();
 	int32 MaxTries = BCGame.GetMaxTries();
 	//std::cout << MaxTries << std::endl;
 	//Loop asking for guesses while the game is NOT won
 	// and there are still tries remaining
+
 
 	while (!BCGame.GetIsGameWon() && BCGame.GetCurrentTry() <= MaxTries)
 	{
@@ -67,8 +74,28 @@ void PlayGame()
 
 	//std::cout << "DEBUG: Play Game is Over...\n";
 
-	//TODO: Add a game summary
 	PrintGameSummary();
+	return;
+}
+
+//Prompt for User to enter a number between 3 & 6 to set the Hidden word.
+void AskForHiddenWordLength()
+{
+	int32 IsValidInt = 0;
+	
+	while (IsValidInt == 0)
+	{
+		FText HWLength = "";
+		
+
+		std::cout << "\n Pick the size of the hidden word. (Select a number between 3 and 6):";
+		std::getline(std::cin, HWLength);
+
+		//FText::const_iterator it = HWLength.begin();
+
+		IsValidInt = BCGame.ConvertPlayerHiddenWord(HWLength);
+	}
+
 	return;
 }
 
@@ -77,13 +104,13 @@ FText GetValidGuess()
 {
 	FText Guess = "";
 	EGuessStatus Status = EGuessStatus::Invalid_Status;
-
+	
 	do
 	{
 		int32 ActiveTry = BCGame.GetCurrentTry();
 
 		std::cout << std::endl;
-		std::cout << "Try: " << ActiveTry << ". Enter a guess: ";
+		std::cout << "Try: " << ActiveTry << " of " << BCGame.GetMaxTries() << ".\n Enter a guess: ";
 
 		std::getline(std::cin, Guess);
 
@@ -118,22 +145,24 @@ FText GetValidGuess()
 bool AskToPlayAgain()
 {
 	std::cout << std::endl;
-	std::cout << "Do you want to play again with the same hidden word? (y/n)";
+	std::cout << "Do you want to play again? (y/n)";
 	FText Response = "";
 	std::getline(std::cin, Response);
 
-	std::cout << "Is it [y]? " << (Response[0] == 'y') || (Response[0] == 'Y');
-	std::cout << std::endl;
+	//std::cout << "Is it [y]? " << (Response[0] == 'y') || (Response[0] == 'Y');
+	std::cout << "#----------------------------------------------# \n\n";
+	//std::cout << std::endl << std::endl;
 
 	//Return
 	return (Response[0] == 'y') || (Response[0] == 'Y');
 }
 
+//Game Summary
 void PrintGameSummary()
 {
 	if (BCGame.GetIsGameWon())
 	{
-		std::cout << "YOU WON! Or at least completed the puzzle. \n Congrats!";
+		std::cout << "YOU WON! Congrats on completing the puzzle. \n\n";
 	}
 	else
 	{

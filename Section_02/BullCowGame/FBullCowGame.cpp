@@ -3,31 +3,60 @@
 #include <map>
 #define TMap std::map
 
-FBullCowGame::FBullCowGame() { Reset(); }
+using FText = std::string;
 
-int32 FBullCowGame::GetMaxTries() const { return MyMaxTries; }
+TMap<int32, FString> ChosenWordLength{ {3, "map"}, {4, "live"}, {5, "plane"}, {6, "planet"} };
+
+FBullCowGame::FBullCowGame() { Reset(); } //Default constructor
+
 int32 FBullCowGame::GetCurrentTry() const { return MyCurretTry; }
 int32 FBullCowGame::GetHiddenWordLength() const { return MyHiddenWord.length(); }
-bool FBullCowGame::GetIsGameWon() const{ return bGameIsWon; }
+bool FBullCowGame::GetIsGameWon() const { return bGameIsWon; }
+
+int32 FBullCowGame::ConvertPlayerHiddenWord(FString PlayerChosenLength)
+{
+	
+	int32 NewHiddenWordLength = 0;
+	if (IsValidNumber(PlayerChosenLength))
+	{
+		//Converts the string to an int, if we've verified the it can be
+		NewHiddenWordLength = std::stoi(PlayerChosenLength);
+		SetHiddenWord(NewHiddenWordLength);
+		return NewHiddenWordLength;
+	}
+	else
+	{
+		//This returns zero so the AskForHiddenWordLength() in main.cpp continues to run
+		return 0;
+	}
+	
+}
+
+//Size of Hidden Word... Is this needed or will the enum suffice?
+void FBullCowGame::SetHiddenWord(int32 NewWordLength)
+{
+	//std::cout << ChosenWordLength[NewWordLength] << std::endl;
+	MyHiddenWord = ChosenWordLength[NewWordLength];
+	return;
+}
+
+int32 FBullCowGame::GetMaxTries() const 
+{ 
+	TMap<int32, int32> WordLengthToMaxTries{ {3, 4}, {4, 4}, {5,5}, {6,7} };
+	return WordLengthToMaxTries[MyHiddenWord.length()]; 
+}
 
 void FBullCowGame::Reset()
 {
-	constexpr int32 MAX_TRIES = 2;
-	MyMaxTries = MAX_TRIES;
 
-	const FString HIDDEN_WORD = "planet";
-	MyHiddenWord = HIDDEN_WORD;
+	//const FString HIDDEN_WORD = "planet";
+	MyHiddenWord = "map";
 
 	MyCurretTry = 1;
 	bGameIsWon = false;
 
 	return;
 }
-
-/*int32 FBullCowGame::GetHiddenWordLength() const
-{
-	return MyHiddenWord.length();
-}*/
 
 EGuessStatus FBullCowGame::CheckGuessValidity(FString Guess) const
 {
@@ -37,7 +66,7 @@ EGuessStatus FBullCowGame::CheckGuessValidity(FString Guess) const
 		return EGuessStatus::Not_Isogram;
 	}	
 	//if the guess isn't all lowercase, return error 
-	else if (false) //TODO Write function
+	else if (!IsLowercase(Guess)) 
 	{
 		return EGuessStatus::Not_Lowercase;
 	}
@@ -115,28 +144,106 @@ bool FBullCowGame::IsIsogram(FString Word) const
 	
 	//Setup a map
 	TMap<char, bool> LetterSeen; 
-	int32 MapLoc = 0;
 
 	for (auto Letter : Word) //For all letters of the word
 	{
-		Letter = tolower(Letter); //Handle mixed case
+		Letter = tolower(Letter); //Handle mixed capitalization case
 		
-		//Keep count of how many times each letter was seen
-		LetterSeen.insert(std::pair<char, bool>(Letter, true));
-
-
-		std::cout << MapLoc << " " << LetterSeen[MapLoc] << std::endl;
-
-		MapLoc++;
-
-		std::cout << '\n';
-
-		//If same letter was seen twice return false
-
-		//Else return true cause all letters were only seen once
+		//If the letter can be found in the map, this isn't an isogram
+		if (LetterSeen.find(Letter) != LetterSeen.end())
+		{
+			//std::cout << "Has this letter been seen?: " << Letter << (LetterSeen.find(Letter) != LetterSeen.end()) << std::endl;
+			return false;
+		}
+		else //Add the letter to the map to get checked against
+		{
+			LetterSeen.insert(std::make_pair(Letter, true));
+		}
+		
 
 	}
 
-	
+	/* LEAVING IN FOR NOW
+		This was a different way of arriving at the same answer
+		It takes compares the size of the map array after adding
+		all the letters to the size of the word. This worked fine
+		since the map only adds an entry once and won't duplicate it
+		However it's faster to check the above way because as soon as
+		a duplicate is found it jumps out of adding the map.
+	*/
+	//If the container size doesn't equal the word size, it can't be an isogram
+	//if (LetterSeen.size() != Word.size())
+	//{
+	//	std::cout << "This is not an isogram..." << std::endl;
+	//	return false;
+	//}
+	////Else return true cause all letters were only seen once
+	//else
+	//{
+	//	std::cout << "Isogram confirmed!!!";
+	//	return true;
+	//}
+
 	return true;
+}
+
+bool FBullCowGame::IsLowercase(FString Word) const
+{
+
+	for (auto Letter : Word)
+	{
+		if (!islower(Letter))
+		{
+			//std::cout << "This letter is not lower case: " << Letter << std::endl;
+			return false; 
+		}
+	}
+
+	return true;
+}
+
+//Check player entered string for validity when choosing a word length
+bool FBullCowGame::IsValidNumber(FString PlayerChosenLength) const
+{
+	int32 LetterCount =	0;
+
+	for (auto Letter : PlayerChosenLength) //For all letters of the word
+	{
+
+		//std::cout << "For Loop: " << Letter;
+
+		//If there are too many characters then it can't be a single integer
+		if (LetterCount > 0)
+		{
+			std::cout << "Please enter a single digit. " << std::endl;
+			return false; 
+		}
+
+
+		LetterCount++;
+	}
+
+	//std::cout << "What value is this? " << std::stoi(PlayerChosenLength);
+	//Ensures this char can be converted to an int
+	for (FString::size_type i = 0; i < PlayerChosenLength.length(); i++)
+	{
+		if (isdigit(PlayerChosenLength[i]) ) //If this is a digit, break the loop and check for valid range
+		{
+			break;
+		}
+		else //This is not a digit and return false to continue asking for a valid number
+		{
+			return false;
+		}
+	} 
+	
+
+	//Check the number to make sure it's between 3 and 6
+	if (std::stoi(PlayerChosenLength) == 3)	{ return true; }
+	else if (std::stoi(PlayerChosenLength) == 4) { return true; }
+	else if (std::stoi(PlayerChosenLength) == 5) { return true; }
+	else if (std::stoi(PlayerChosenLength) == 6) { return true; }
+	else { std::cout << PlayerChosenLength << " is not between 3 and 6... \n";  return false; }
+	
+	//return false;
 }
